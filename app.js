@@ -1,30 +1,66 @@
-// app.js
+(() => {
+  'use strict';
 
-// Wait for the DOM content to be loaded
-document.addEventListener("DOMContentLoaded", function() {
-  // Get the theme button
-    const themeButton = document.getElementById("theme-button");
+  const storedTheme = localStorage.getItem('theme');
 
-    // Check the initial theme and set the button icon accordingly
-    if (document.documentElement.getAttribute("data-bs-theme") === "dark") {
-        themeButton.innerHTML = '<i class="ri-sun-fill"></i>';
-    } else {
-        themeButton.innerHTML = '<i class="ri-moon-fill"></i>';
+  const getPreferredTheme = () => {
+    if (storedTheme) {
+      return storedTheme;
     }
 
-    // Add a click event listener to the theme button
-    themeButton.addEventListener("click", function(event) {
-        // Prevent default action
-        event.preventDefault();
-        event.stopPropagation();
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  };
 
-        // Toggle between dark and light themes
-        if (document.documentElement.getAttribute("data-bs-theme") === "dark") {
-            document.documentElement.setAttribute("data-bs-theme", "light");
-            themeButton.innerHTML = '<i class="ri-moon-fill"></i>';
-        } else {
-            document.documentElement.setAttribute("data-bs-theme", "dark");
-            themeButton.innerHTML = '<i class="ri-sun-fill"></i>';
-        }
+  const setTheme = theme => {
+    if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.setAttribute('data-bs-theme', 'dark');
+    } else {
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    }
+  };
+
+  const showActiveTheme = theme => {
+    // Update the active theme icon
+    const activeThemeIcon = document.querySelector('.theme-icon-active');
+    const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`);
+    const iconOfActiveBtn = btnToActive.querySelector('i').dataset.themeIcon;
+
+    // Remove active class from all buttons
+    document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+      element.classList.remove('active');
     });
-});
+
+    // Add active class to the clicked button
+    btnToActive.classList.add('active');
+
+    // Update the active theme icon
+    activeThemeIcon.classList.remove(activeThemeIcon.dataset.iconActive);
+    activeThemeIcon.classList.add(iconOfActiveBtn);
+    activeThemeIcon.dataset.iconActive = iconOfActiveBtn;
+  };
+
+  // Listen for changes in color scheme preference
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (storedTheme !== 'light' || storedTheme !== 'dark') {
+      setTheme(getPreferredTheme());
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    // Set the theme based on preference
+    setTheme(getPreferredTheme());
+
+    // Show active theme icon
+    showActiveTheme(getPreferredTheme());
+
+    // Toggle theme when a button is clicked
+    document.querySelectorAll('[data-bs-theme-value]').forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const theme = toggle.getAttribute('data-bs-theme-value');
+        localStorage.setItem('theme', theme);
+        setTheme(theme);
+        showActiveTheme(theme, true);
+      });
+    });
+  });
+})();
